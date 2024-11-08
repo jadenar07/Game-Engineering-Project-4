@@ -1,13 +1,12 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
-
+#include "Map.hpp"
 #include "glm/glm.hpp"
 #include "ShaderProgram.h"
-enum EntityType { PLATFORM, PLAYER, ENEMY ,GOAL  };
+enum EntityType { PLATFORM, PLAYER, ENEMY  };
 enum AIType     { WALKER, GUARD            };
 enum AIState    { WALKING, IDLE, ATTACKING };
-enum GameResult  { WON, LOST, IN_PROGESS};
 
 
 enum AnimationDirection { LEFT, RIGHT, UP, DOWN };
@@ -17,7 +16,7 @@ class Entity
 private:
     bool m_is_active = true;
     
-    int m_walking[4][4];
+    int m_walking[4][4]; // 4x4 array for walking animations
 
     
     EntityType m_entity_type;
@@ -56,14 +55,10 @@ private:
     bool m_collided_bottom = false;
     bool m_collided_left   = false;
     bool m_collided_right  = false;
-    bool loser_found = false;
-    
-    GameResult m_game_result = IN_PROGESS;
 
 public:
     // ————— STATIC VARIABLES ————— //
     static constexpr int SECONDS_PER_FRAME = 4;
-    bool collision = false;
 
     // ————— METHODS ————— //
     Entity();
@@ -80,13 +75,15 @@ public:
     void const check_collision_y(Entity* collidable_entities, int collidable_entity_count);
     void const check_collision_x(Entity* collidable_entities, int collidable_entity_count);
     
-    int const check_winner(Entity *collidable_entities, int collidable_entity_count, Entity* Target);
-
-    void update(float delta_time, Entity *player, Entity *collidable_entities, int collidable_entity_count);
+    // Overloading our methods to check for only the map
+    void const check_collision_y(Map *map);
+    void const check_collision_x(Map *map);
+    
+    void update(float delta_time, Entity *player, Entity *collidable_entities, int collidable_entity_count, Map *map);
     void render(ShaderProgram* program);
 
-    void ai_activate(Entity *player);
-    void ai_walk();
+    void ai_activate(Entity *player, float delta_time);
+    void ai_walk(float delta_time);
     void ai_guard(Entity *player);
     
     void normalise_movement() { m_movement = glm::normalize(m_movement); }
@@ -118,9 +115,6 @@ public:
     bool      const get_collided_bottom() const { return m_collided_bottom; }
     bool      const get_collided_right() const { return m_collided_right; }
     bool      const get_collided_left() const { return m_collided_left; }
-    bool      const get_loser() const { return loser_found; }
-    GameResult const get_game_result() const { return m_game_result; }
-    
     
     void activate()   { m_is_active = true;  };
     void deactivate() { m_is_active = false; };
@@ -128,10 +122,7 @@ public:
     void const set_entity_type(EntityType new_entity_type)  { m_entity_type = new_entity_type;};
     void const set_ai_type(AIType new_ai_type){ m_ai_type = new_ai_type;};
     void const set_ai_state(AIState new_state){ m_ai_state = new_state;};
-    void const set_position(glm::vec3 new_position) {
-        m_position = new_position;
-        std::cout << "Set position to: (" << m_position.x << ", " << m_position.y << ")" << std::endl;
-    }
+    void const set_position(glm::vec3 new_position) { m_position = new_position; }
     void const set_velocity(glm::vec3 new_velocity) { m_velocity = new_velocity; }
     void const set_acceleration(glm::vec3 new_acceleration) { m_acceleration = new_acceleration; }
     void const set_movement(glm::vec3 new_movement) { m_movement = new_movement; }
@@ -146,13 +137,6 @@ public:
     void const set_jumping_power(float new_jumping_power) { m_jumping_power = new_jumping_power;}
     void const set_width(float new_width) {m_width = new_width; }
     void const set_height(float new_height) {m_height = new_height; }
-    
-    
-    void const set_acceleration_left() {m_acceleration.x = -0.3f;}
-    void const set_acceleration_up() {m_acceleration.y = 0.3f;}
-    void const set_acceleration_right() {m_acceleration.x = 0.3f;}
-    void const non_press_acceleration() {m_acceleration.x = 0.0f;}
-    void const non_press_acceleration_down() {m_acceleration.y = -0.3f;}
 
     // Setter for m_walking
     void set_walking(int walking[4][4])
@@ -165,6 +149,7 @@ public:
             }
         }
     }
+    
 };
 
 #endif // ENTITY_H
